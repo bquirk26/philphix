@@ -16,6 +16,7 @@
 /*
  * General utility routines (including malloc()).
  */
+
 #include <stdlib.h>
 
 /*
@@ -31,15 +32,19 @@
 /*
  * This hash table stores the dictionary.
  */
-HashTable *dictionary;
+#define HASH_P 31
+#define TABLE_SIZE 97
 
+HashTable *dictionary;
+char *parseWord(FILE *);
 /*
  * The MAIN routine.  You can safely print debugging information
  * to standard error (stderr) as shown and it will be ignored in 
  * the grading process.
  */
 int main(int argc, char **argv) {
-  if (argc != 2) {
+	readDictionary("tests/sanity/replace"); 
+if (argc != 2) {
     fprintf(stderr, "Specify a dictionary\n");
     return 1;
   }
@@ -47,7 +52,7 @@ int main(int argc, char **argv) {
    * Allocate a hash table to store the dictionary.
    */
   fprintf(stderr, "Creating hashtable\n");
-  dictionary = createHashTable(0x61C, &stringHash, &stringEquals);
+  dictionary = createHashTable(TABLE_SIZE, &stringHash, &stringEquals);
 
   fprintf(stderr, "Loading dictionary %s\n", argv[1]);
   readDictionary(argv[1]);
@@ -69,8 +74,16 @@ int main(int argc, char **argv) {
  */
 unsigned int stringHash(void *s) {
   // -- TODO --
-  fprintf(stderr, "need to implement stringHash\n");
-
+//  fprintf(stderr, "need to implement stringHash\n");
+	char *word = (char *) s;
+	int power = 1;
+	int hash = 0;
+	while (*word) { 
+		hash = hash + (*word * power);
+		power = power * HASH_P;
+		word++;
+	}
+	hash = hash % TABLE_SIZE;
   /* To suppress compiler warning until you implement this function, */
   return 0;
 }
@@ -81,9 +94,17 @@ unsigned int stringHash(void *s) {
  */
 int stringEquals(void *s1, void *s2) {
   // -- TODO --
-  fprintf(stderr, "You need to implement stringEquals");
-  /* To suppress compiler warning until you implement this function */
-  return 0;
+  //fprintf(stderr, "You need to implement stringEquals");
+	char *string1 = (char *) s1;
+	char *string2 = (char *) s2;
+	while (*string1 || *string2) {
+		if (*string1 != *string2) return 0;
+		string1++;
+		string2++;
+	}  
+	if (*string1 || *string2) return 0;
+	return 1;
+/* To suppress compiler warning until you implement this function */
 }
 
 /*
@@ -98,9 +119,56 @@ int stringEquals(void *s1, void *s2) {
  * NOT exist, you should print some message to standard error and call exit(61)
  * to cleanly exit the program.
  */
+char *parseWord(FILE *fp) {
+	int c; 
+	c = getc(fp);
+	while (!(c==EOF) && isspace(c)) { //skip over any leading whitespace
+		c = getc(fp);
+	} 
+	char *word = malloc(sizeof(char) * 60); //hardcoding to 60
+	int word_size = 0;
+	while (!isspace(c) && !(c==EOF)) {
+		word[word_size] = c;
+		word_size++;
+		c = getc(fp);
+	}
+	word = realloc(word, sizeof(char) * word_size + 1);
+	return word;
+}
+
+char *parseStdWord() {
+	int c; 
+	c = getchar();
+	while (!(c==EOF) && isspace(c)) { //skip over any leading whitespace
+		c = getchar();
+	} 
+	char *word = malloc(sizeof(char) * 60); //hardcoding to 60
+	int word_size = 0;
+	while (!isspace(c) && !(c==EOF)) {
+		word[word_size] = c;
+		word_size++;
+		c = getchar();
+	}
+	if (word_size == 0) { 
+		free(word);
+		return NULL;
+	}
+	word = realloc(word, sizeof(char) * word_size + 1);
+	return word;
+}
 void readDictionary(char *dictName) {
   // -- TODO --
-  fprintf(stderr, "You need to implement readDictionary\n");
+  	FILE *fp = fopen(dictName, "r");
+	if (fp == NULL) {
+		 fprintf(stderr, "You need to implement readDictionary\n");
+		return;
+	}
+	while (!feof(fp)) {
+		char *nextKey = parseWord(fp);
+		char *nextVal = parseWord(fp);
+		insertData(dictionary, nextKey, nextVal);
+	}
+	fclose(fp);
 }
 
 /*
@@ -125,7 +193,41 @@ void readDictionary(char *dictName) {
  * numbers and punctuation) which are longer than 60 characters. Again, for the 
  * final bit of your grade, you cannot assume words have a bounded length.
  */
+int inAlphabet(int c) {
+	if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) return 1;
+	return 0;
+}  
+
 void processInput() {
   // -- TODO --
-  fprintf(stderr, "You need to implement processInput\n");
+  	int c = getchar();
+	char *currentWord = malloc(60 * sizeof(char));
+	int parsingWord = 0;
+	int word_length = 0;
+	while (c != EOF) {	
+		if (inAlphabet(c) && !word_length) {
+			free(currentWord);
+			currentWord = malloc(60 * sizeof(char));
+		} 
+		if (inAlphabet(c)) {
+			currentWord[word_length] = c;
+			word_length++;
+		}
+		if (!inAlphabet(c) && word_length) {
+			word_length = 0;
+			//do stuff with the word
+			char *retWord;
+			if (retWord = findData(dictionary, currentWord) return retWord;
+			else if (retWord = findData
+
+		}
+		if (!inAlphabet(c)) {
+			printf("%c", c);
+		}
+	}
+}
+		
+	
+	}
+fprintf(stderr, "You need to implement processInput\n");
 }

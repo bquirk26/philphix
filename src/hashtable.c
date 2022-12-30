@@ -51,7 +51,7 @@ void *findData(HashTable *table, void *key) {
 	unsigned int loc = (*(table->hashFunction))(key);
 	HashBucket *curr = ((table->data)[loc]);
 	while (curr) {
-		if (*table->equalFunction(key, curr->key)) {
+		if ((*table->equalFunction)(key, curr->key)) {
 			return curr->data;
 		}
 		curr = curr->next;
