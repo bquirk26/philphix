@@ -42,8 +42,7 @@ char *parseWord(FILE *);
  * to standard error (stderr) as shown and it will be ignored in 
  * the grading process.
  */
-int main(int argc, char **argv) {
-	readDictionary("tests/sanity/replace"); 
+int main(int argc, char **argv) {	
 if (argc != 2) {
     fprintf(stderr, "Specify a dictionary\n");
     return 1;
@@ -60,7 +59,7 @@ if (argc != 2) {
 
   fprintf(stderr, "Processing stdin\n");
   processInput();
-
+	freeTable(dictionary);
   /*
    * The MAIN function in C should always return 0 as a way of telling
    * whatever program invoked this that everything went OK.
@@ -77,15 +76,15 @@ unsigned int stringHash(void *s) {
 //  fprintf(stderr, "need to implement stringHash\n");
 	char *word = (char *) s;
 	int power = 1;
-	int hash = 0;
+	unsigned int hash = 0;
 	while (*word) { 
 		hash = hash + (*word * power);
 		power = power * HASH_P;
 		word++;
 	}
 	hash = hash % TABLE_SIZE;
+	return hash;
   /* To suppress compiler warning until you implement this function, */
-  return 0;
 }
 
 /*
@@ -97,7 +96,7 @@ int stringEquals(void *s1, void *s2) {
   //fprintf(stderr, "You need to implement stringEquals");
 	char *string1 = (char *) s1;
 	char *string2 = (char *) s2;
-	while (*string1 || *string2) {
+	while (*string1 &&  *string2) {
 		if (*string1 != *string2) return 0;
 		string1++;
 		string2++;
@@ -136,27 +135,7 @@ char *parseWord(FILE *fp) {
 	return word;
 }
 
-char *parseStdWord() {
-	int c; 
-	c = getchar();
-	while (!(c==EOF) && isspace(c)) { //skip over any leading whitespace
-		c = getchar();
-	} 
-	char *word = malloc(sizeof(char) * 60); //hardcoding to 60
-	int word_size = 0;
-	while (!isspace(c) && !(c==EOF)) {
-		word[word_size] = c;
-		word_size++;
-		c = getchar();
-	}
-	if (word_size == 0) { 
-		free(word);
-		return NULL;
-	}
-	word = realloc(word, sizeof(char) * word_size + 1);
-	return word;
-}
-void readDictionary(char *dictName) {
+void readDictionary(char *dictName) { //errors repeating words
   // -- TODO --
   	FILE *fp = fopen(dictName, "r");
 	if (fp == NULL) {
@@ -166,7 +145,7 @@ void readDictionary(char *dictName) {
 	while (!feof(fp)) {
 		char *nextKey = parseWord(fp);
 		char *nextVal = parseWord(fp);
-		insertData(dictionary, nextKey, nextVal);
+		insertData(dictionary, (void *) nextKey, (void *) nextVal);
 	}
 	fclose(fp);
 }
@@ -196,38 +175,72 @@ void readDictionary(char *dictName) {
 int inAlphabet(int c) {
 	if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) return 1;
 	return 0;
-}  
+} 
+// --TODO -- 
+// MAKE SURE ALL MALLOCS HAVE NULL CHECKS AFTER
+
+char *firstNotLower(char *str, int length) {
+	if (str == NULL) return NULL;
+	int c;
+	for (int i = 1; i < length; i++) {
+		c = str[i];
+		if (c >= 'A' && c <= 'Z') c += 32;
+		str[i] = c;
+	}
+	return str;	
+}
+
+
+char *toLower(char *str, int length) {
+	if (str == NULL) return NULL;
+	int c;
+	for (int i = 0; i < length; i++) {
+		c = str[i];
+		if (c >= 'A' && c <= 'Z') c += 32;
+		str[i] = c;
+	}
+	return str;
+}
+	 
 
 void processInput() {
   // -- TODO --
   	int c = getchar();
-	char *currentWord = malloc(60 * sizeof(char));
-	int parsingWord = 0;
+	char *currentWord = (char *) malloc(60 * sizeof(char));
 	int word_length = 0;
-	while (c != EOF) {	
-		if (inAlphabet(c) && !word_length) {
+	while (c != EOF) {// while 1 and special case for EOF	
+		if (inAlphabet(c) && !word_length) { //beginning a word
 			free(currentWord);
-			currentWord = malloc(60 * sizeof(char));
+			currentWord = (char *) malloc(60 * sizeof(char));
 		} 
 		if (inAlphabet(c)) {
-			currentWord[word_length] = c;
+			if (word_length > 58) { fprintf(stderr, "word length %d too long", word_length); break;}
+			currentWord[word_length] = c; //invalid write of size 1
+			currentWord[word_length+1] = '\0';
 			word_length++;
 		}
-		if (!inAlphabet(c) && word_length) {
-			word_length = 0;
+		if (!inAlphabet(c) && word_length) {	
 			//do stuff with the word
+			char *wordCopy = malloc(sizeof(char) * word_length + 1);
+			strcpy(wordCopy, currentWord);
 			char *retWord;
-			if (retWord = findData(dictionary, currentWord) return retWord;
-			else if (retWord = findData
-
+			char *a;
+			if (a = (char *) findData(dictionary, currentWord)) {retWord = a;}
+			else if (a = (char *) findData(dictionary, firstNotLower(currentWord, word_length))) {retWord = a;}
+			else if (a = (char *) findData(dictionary, toLower(currentWord, word_length))){ retWord = a;} //should we be mallocing stuff here?
+			else { retWord = wordCopy;}
+			printf("%s", retWord);
+			word_length = 0;
+			free(wordCopy); 
 		}
 		if (!inAlphabet(c)) {
 			printf("%c", c);
 		}
+		c = getchar();
 	}
+	if (currentWord) free(currentWord);
 }
 		
 	
-	}
-fprintf(stderr, "You need to implement processInput\n");
-}
+	
+
